@@ -1,5 +1,5 @@
-from network import Router, Host
-from link import Link, LinkLayer
+from network_1 import Router, Host
+from link_1 import Link, LinkLayer
 import threading
 from time import sleep
 import sys
@@ -19,22 +19,23 @@ if __name__ == '__main__':
     object_L.append(host_2)
 
     #create routers and routing tables for connected clients (subnets)
-    encap_tbl_D = {}    # table used to encapsulate network packets into MPLS frames
-    frwd_tbl_D = {}     # table used to forward MPLS frames
-    decap_tbl_D = {}    # table used to decapsulate network packets from MPLS frames
+    #the forwarding tables should contain the in label, in interface, out label, and out interface
+    encap_tbl_D = {"H1": {"RA"}, "H2":{"RB"}} # table used to encapsulate network packets into MPLS frames
+    frwd_tbl_D = {"2": {"dest" : "H1", "intf" : 0, "outLabel":"H1"}, "H2" : {"dest" : "H2", "outLabel": "3", "intf" : 1}} # table used to forward MPLS frames
+    decap_tbl_D = {"RA":{"H1"}, "RB":{"H2"}}  # table used to decapsulate network packets from MPLS frames
     router_a = Router(name='RA',
-                              intf_capacity_L=[500,500],
+                              intf_capacity_L=[("H1",500),("RB",500)],
                               encap_tbl_D = encap_tbl_D,
                               frwd_tbl_D = frwd_tbl_D,
                               decap_tbl_D = decap_tbl_D,
                               max_queue_size=router_queue_size)
     object_L.append(router_a)
 
-    encap_tbl_D = {}
-    frwd_tbl_D = {}
-    decap_tbl_D = {}
+    encap_tbl_D = {"H1": {"RA"}, "H2":{"RB"}}
+    frwd_tbl_D = { "H1" : {"intf" : 0, "dest" : "H1", "outLabel":"2"} , "3": {"dest" :"H2","outLabel" :"H2", "intf" : 1}}
+    decap_tbl_D = {"RA":{"H1"}, "RB":{"H2"}}
     router_b = Router(name='RB',
-                              intf_capacity_L=[500,100],
+                              intf_capacity_L=[("RA",500),("RB",100)],
                               encap_tbl_D = encap_tbl_D,
                               frwd_tbl_D = frwd_tbl_D,
                               decap_tbl_D = decap_tbl_D,
