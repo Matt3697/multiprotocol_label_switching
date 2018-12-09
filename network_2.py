@@ -20,13 +20,9 @@ class Interface:
         try:
             if in_or_out == 'in':
                 pkt_S = self.in_queue.get(False)
-                # if pkt_S is not None:
-                #     print('getting packet from the IN queue')
                 return pkt_S
             else:
                 pkt_S = self.out_queue.get(False)
-                # if pkt_S is not None:
-                #     print('getting packet from the OUT queue')
                 return pkt_S
         except queue.Empty:
             return None
@@ -37,10 +33,8 @@ class Interface:
     # @param block - if True, block until room in queue, if False may throw queue.Full exception
     def put(self, pkt, in_or_out, block=False):
         if in_or_out == 'out':
-            # print('putting packet in the OUT queue')
             self.out_queue.put(pkt, block)
         else:
-            # print('putting packet in the IN queue')
             self.in_queue.put(pkt, block)
 
 
@@ -204,6 +198,7 @@ class Router:
         ##see if we can decapsulate
         try:
             if m_fr.label == tbl_D['dest']:
+                print('%s: decapsulating MPLS frame "%s"' % (self, m_fr))
                 fr = LinkFrame("Network", m_fr.frame)
             else:
                 fr = LinkFrame("MPLS", m_fr.to_byte_S())
