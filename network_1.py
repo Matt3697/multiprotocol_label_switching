@@ -200,7 +200,7 @@ class Router:
         outIntf = table["interface"]
         #if the queue is not full, try to decapsulate
         try:
-            #if the current label is the same as the destination label then we can decapsulate the mpls frame
+            #if the next hop is the destination then we can decapsulate the mpls frame
             if m_fr.label == table['dest']:
                 print('%s: decapsulating MPLS frame "%s"' % (self, m_fr))
                 fr = LinkFrame("Network", m_fr.frame)

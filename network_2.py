@@ -192,19 +192,19 @@ class Router:
         #TODO: implement MPLS forward, or MPLS decapsulation if this is the last hop router for the path
         print('%s: processing MPLS frame "%s"' % (self, m_fr))
         ## From the label received, we determine where it's going
-        tbl_D = self.frwd_tbl_D[m_fr.label]
-        m_fr.label = tbl_D["outLabel"]
-        outInterface = tbl_D["interface"]
-        ##see if we can decapsulate
+        table = self.frwd_tbl_D[m_fr.label]
+        m_fr.label = table["outLabel"]
+        outIntf = table["interface"]
+        #if the queue is not full, try to decapsulate
         try:
-            if m_fr.label == tbl_D['dest']:
+            #if the next hop is the destination then we can decapsulate the mpls frame
+            if m_fr.label == table['dest']:
                 print('%s: decapsulating MPLS frame "%s"' % (self, m_fr))
                 fr = LinkFrame("Network", m_fr.frame)
             else:
                 fr = LinkFrame("MPLS", m_fr.to_byte_S())
-            # fr = LinkFrame('Network', m_fr.to_byte_S()) ##this is how it used to be set up. Always assume it was in there
-            self.intf_L[outInterface].put(fr.to_byte_S(), 'out', True)
-            print('%s: forwarding frame "%s" from interface %d to %d' % (self, fr, i, outInterface))
+            self.intf_L[outIntf].put(fr.to_byte_S(), 'out', True)
+            print('%s: forwarding frame "%s" from interface %d to %d' % (self, fr, i, outIntf))
         except queue.Full:
             print('%s: frame "%s" lost on interface %d' % (self, m_fr, i))
             pass
