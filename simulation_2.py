@@ -22,7 +22,7 @@ if __name__ == '__main__':
 
     #create routers and routing tables for connected clients (subnets)
     encap_tbl_D = {"H1": {"RA"}, "H2":{"RA"}}    # table used to encapsulate network packets into MPLS frames
-    frwd_tbl_D = {"H1": {"dest" : "H3", "intf" : 2, "outLabel":"1"}, "H2" : {"dest" : "H3", "outLabel": "2", "intf" : 3}}     # table used to forward MPLS frames
+    frwd_tbl_D = {"H1": {"dest" : "H3", "interface" : 2, "outLabel":"1"}, "H2" : {"dest" : "H3", "outLabel": "2", "interface" : 3}}     # table used to forward MPLS frames
     decap_tbl_D = {"RA":{"H1", "H2"}, "RD":{"H3"}}    # table used to decapsulate network packets from MPLS frames
     router_a = Router(name='RA',
                               intf_capacity_L=[("H1",500),("H2",500),("RB",500),("RC",500)],
@@ -33,7 +33,7 @@ if __name__ == '__main__':
     object_L.append(router_a)
 
     encap_tbl_D = {"H1": {"RA"}, "H2":{"RB"}}
-    frwd_tbl_D = { "1" : {"intf" : 1, "dest" : "H3", "outLabel":"1"} }
+    frwd_tbl_D = { "1" : {"interface" : 1, "dest" : "H3", "outLabel":"1"} }
     decap_tbl_D = {"RA":{"H1", "H2"}, "RD":{"H3"}}
     router_b = Router(name='RB',
                               intf_capacity_L=[("RA",500),("RD",100)],
@@ -44,7 +44,7 @@ if __name__ == '__main__':
     object_L.append(router_b)
 
     encap_tbl_D = {"H1": {"RA"}, "H2":{"RB"}}
-    frwd_tbl_D = { "2" : {"intf" : 1, "dest" : "H3", "outLabel":"2"} }
+    frwd_tbl_D = { "2" : {"interface" : 1, "dest" : "H3", "outLabel":"2"} }
     decap_tbl_D = {"RA":{"H1", "H2"}, "RD":{"H3"}}
     router_c = Router(name='RC',
                               intf_capacity_L=[("RA",500),("RD",100)],
@@ -55,7 +55,7 @@ if __name__ == '__main__':
     object_L.append(router_c)
 
     encap_tbl_D = {"H1": {"RA"}, "H2":{"RB"}}
-    frwd_tbl_D = { "1" : {"intf" : 2, "dest" : "H3", "outLabel":"H3"} , "2": {"dest" :"H3","outLabel" :"H3", "intf" : 2}}
+    frwd_tbl_D = { "1" : {"interface" : 2, "dest" : "H3", "outLabel":"H3"} , "2": {"dest" :"H3","outLabel" :"H3", "interface" : 2}}
     decap_tbl_D = {"RA":{"H1", "H2"}, "RD":{"H3"}}
     router_d = Router(name='RD',
                               intf_capacity_L=[("RC",100),("RB",100),("H3",100)],

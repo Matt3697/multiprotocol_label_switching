@@ -1,11 +1,11 @@
 import queue
 import threading
-from link_1 import LinkFrame
+from link_2 import LinkFrame
 
 
 ## wrapper class for a queue of packets
 class Interface:
- ## @param maxsize - the maximum size of the queue storing packets
+    ## @param maxsize - the maximum size of the queue storing packets
     #  @param capacity - the capacity of the link in bps
     def __init__(self, name = "defaultName", maxsize=0, capacity=500):
         self.name = name
@@ -48,7 +48,7 @@ class Interface:
 # NOTE: You will need to extend this class for the packet to include
 # the fields necessary for the completion of this assignment.
 class NetworkPacket:
-     ## packet encoding lengths
+    ## packet encoding lengths
     dst_S_length = 5
 
     ##@param dst: address of the destination host
@@ -184,7 +184,7 @@ class Router:
         intfName = self.intf_L[i].name
         ## do we need to encapsulate?
         if self.name in self.encap_tbl_D[intfName]: ## if from host, encapsulate
-            m_fr = MPLSlabel(pkt, pkt.dst)
+            m_fr = MPLSlabel(pkt, intfName)
 
         print('%s: encapsulated packet "%s" as MPLS frame "%s"' % (self, pkt, m_fr))
         #send the encapsulated packet for processing as MPLS frame
@@ -200,15 +200,16 @@ class Router:
         ## From the label received, we determine where it's going
         tbl_D = self.frwd_tbl_D[m_fr.label]
         m_fr.label = tbl_D["outLabel"]
-        outIntf = tbl_D["intf"]
+        outInterface = tbl_D["interface"]
         ##see if we can decapsulate
         try:
             if m_fr.label == tbl_D['dest']:
                 fr = LinkFrame("Network", m_fr.frame)
             else:
                 fr = LinkFrame("MPLS", m_fr.to_byte_S())
-            self.intf_L[outIntf].put(fr.to_byte_S(), 'out', True)
-            print('%s: forwarding frame "%s" from interface %d to %d' % (self, fr, i, outIntf))
+            # fr = LinkFrame('Network', m_fr.to_byte_S()) ##this is how it used to be set up. Always assume it was in there
+            self.intf_L[outInterface].put(fr.to_byte_S(), 'out', True)
+            print('%s: forwarding frame "%s" from interface %d to %d' % (self, fr, i, outInterface))
         except queue.Full:
             print('%s: frame "%s" lost on interface %d' % (self, m_fr, i))
             pass

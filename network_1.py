@@ -197,11 +197,12 @@ class Router:
         # get next destination based on the incoming label using
         table = self.frwd_tbl_D[m_fr.label]
         m_fr.label = table["outLabel"]
-        outIntf = table["intf"]
+        outIntf = table["interface"]
         #if the queue is not full, try to decapsulate
         try:
             #if the current label is the same as the destination label then we can decapsulate the mpls frame
-            if m_fr.label == tbl_D['dest']:
+            if m_fr.label == table['dest']:
+                print('%s: decapsulating MPLS frame "%s"' % (self, m_fr))
                 fr = LinkFrame("Network", m_fr.frame)
             else:
                 #otherwise forward as mpls frame

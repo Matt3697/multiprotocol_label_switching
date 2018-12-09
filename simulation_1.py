@@ -7,7 +7,7 @@ from copy import deepcopy
 
 ##configuration parameters
 router_queue_size = 0 #0 means unlimited
-simulation_time = 10 #give the network sufficient time to execute transfers
+simulation_time = 20 #give the network sufficient time to execute transfers
 
 if __name__ == '__main__':
     object_L = [] #keeps track of objects, so we can kill their threads at the end
@@ -21,7 +21,7 @@ if __name__ == '__main__':
     #create routers and routing tables for connected clients (subnets)
     #the forwarding tables should contain the in label, in interface, out label, and out interface
     encap_tbl_D = {"H1": {"RA"}, "H2":{"RB"}} # table used to encapsulate network packets into MPLS frames
-    frwd_tbl_D = {"2": {"dest" : "H1", "intf" : 0, "outLabel":"H1"}, "H2" : {"dest" : "H2", "outLabel": "3", "intf" : 1}} # table used to forward MPLS frames
+    frwd_tbl_D = {"2": {"dest" : "H1", "interface" : 0, "outLabel":"H1"}, "H2" : {"dest" : "H2", "outLabel": "3", "interface" : 1}} # table used to forward MPLS frames
     decap_tbl_D = {"RA":{"H1"}, "RB":{"H2"}}  # table used to decapsulate network packets from MPLS frames
     router_a = Router(name='RA',
                               intf_capacity_L=[("H1",500),("RB",500)],
@@ -32,7 +32,7 @@ if __name__ == '__main__':
     object_L.append(router_a)
 
     encap_tbl_D = {"H1": {"RA"}, "H2":{"RB"}}
-    frwd_tbl_D = { "H1" : {"intf" : 0, "dest" : "H1", "outLabel":"2"} , "3": {"dest" :"H2","outLabel" :"H2", "intf" : 1}}
+    frwd_tbl_D = { "H1" : {"interface" : 0, "dest" : "H1", "outLabel":"2"} , "3": {"dest" :"H2","outLabel" :"H2", "interface" : 1}}
     decap_tbl_D = {"RA":{"H1"}, "RB":{"H2"}}
     router_b = Router(name='RB',
                               intf_capacity_L=[("RA",500),("RB",100)],
