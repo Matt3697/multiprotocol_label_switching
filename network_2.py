@@ -176,10 +176,9 @@ class Router:
     def process_network_packet(self, pkt, i):
         #TODO: encapsulate the packet in an MPLS frame based on self.encap_tbl_D
         intfName = self.intf_L[i].name
-        ## do we need to encapsulate?
-        if self.name in self.encap_tbl_D[intfName]: ## if from host, encapsulate
+        #if self.name is in the encapsulation list, then encapsulate the fram. I.e first hop router
+        if self.name in self.encap_tbl_D[intfName]:
             m_fr = MPLSlabel(pkt, intfName)
-
         print('%s: encapsulated packet "%s" as MPLS frame "%s"' % (self, pkt, m_fr))
         #send the encapsulated packet for processing as MPLS frame
         self.process_MPLS_frame(m_fr, i)
@@ -223,22 +222,21 @@ class MPLSlabel:
 
     labelLength = 5
 
-    ## initialize the frame and label
     def __init__(self, frame, label):
         self.frame = frame
         self.label = label
 
-    ## called when printing the object
-    def __str__(self):
-        return self.to_byte_S()
 
-    ## Sets the back of it with the label and fills the rest with zeros, then appends this to the packet
+    # Adds the label to the end of the byte_S, which is added to the end of the packet
     def to_byte_S(self):
         byte_S = str(self.label).zfill(self.labelLength)
         byte_S += str(self.frame)
         return byte_S
 
-    ##decode our label from byte_S
+    def __str__(self):
+        return self.to_byte_S()
+
+    #decodes the label using from_byte_S
     @classmethod
     def from_byte_S(self, byte_S):
         frame = byte_S[self.labelLength : ]

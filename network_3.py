@@ -15,19 +15,15 @@ class Interface:
         self.next_avail_time = 0 #the next time the interface can transmit a packet
         self.queuesize = {}
 
-    ##get packet from the queue interface
+    #get packet from the queue interface
     # @param in_or_out - use 'in' or 'out' interface
     def get(self, in_or_out):
         try:
             if in_or_out == 'in':
                 pkt_S = self.in_queue.get(False)
-                # if pkt_S is not None:
-                #     print('getting packet from the IN queue')
                 return pkt_S
             else:
                 pkt_S = self.out_queue.get(False)
-                # if pkt_S is not None:
-                #     print('getting packet from the OUT queue')
                 return pkt_S
         except queue.Empty:
             return None
@@ -38,7 +34,6 @@ class Interface:
     # @param block - if True, block until room in queue, if False may throw queue.Full exception
     def put(self, pkt, in_or_out, block=False):
         if in_or_out == 'out':
-            # print('putting packet in the OUT queue')
             fr = LinkFrame.from_byte_S(pkt)
             if fr.type_S == "Network":
                 p = NetworkPacket.from_byte_S(fr.data_S) #parse a packet out
@@ -55,19 +50,16 @@ class Interface:
                     self.queuesize[p.priority] = 1
             self.out_queue.put(pkt, block)
         else:
-            # print('putting packet in the IN queue')
             self.in_queue.put(pkt, block)
 
 
 ## Implements a network layer packet
-# NOTE: You will need to extend this class for the packet to include
-# the fields necessary for the completion of this assignment.
 class NetworkPacket:
-    ## packet encoding lengths
+    # packet encoding lengths
     dst_S_length = 5
     priority_S_length = 1
 
-    ##@param dst: address of the destination host
+    #@param dst: address of the destination host
     # @param data_S: packet payload
     # @param priority: packet priority
     def __init__(self, dst, data_S, priority=0):
@@ -187,8 +179,6 @@ class Router:
                 p = NetworkPacket.from_byte_S(pkt_S) #parse a packet out
                 self.process_network_packet(p, i)
             elif fr.type_S == "MPLS":
-                # TODO: handle MPLS frames
-                #for now, we just relabel the packet as an MPLS frame without encapsulation
                 m_fr = MPLSlabel.from_byte_S(pkt_S)
                 #send the MPLS frame for processing
                 self.process_MPLS_frame(m_fr, i)
@@ -200,11 +190,13 @@ class Router:
     #  @param i Incoming interface number for packet p
     def process_network_packet(self, pkt, i):
         #TODO: encapsulate the packet in an MPLS frame based on self.encap_tbl_D
-        intfName = self.intf_L[i].name
-        ## do we need to encapsulate?
-        if self.name in self.encap_tbl_D[intfName]: ## if from host, encapsulate
+        interfaceName = self.intf_L[i].name
+        #if self.name is in the encapsulation list, then encapsulate the fram. I.e first hop router
+        if self.name in self.encap_tbl_D[interfaceName]:
+            #if the priority is > 0, its label is 2
             if int(pkt.priority) > 0:
                 label = '2'
+            #otherwise its label is 1
             else:
                 label = '1'
             m_fr = MPLSlabel(pkt, label)
@@ -218,21 +210,19 @@ class Router:
     #  @param m_fr: MPLS frame to process
     #  @param i Incoming interface number for the frame
     def process_MPLS_frame(self, m_fr, i):
-        #TODO: implement MPLS forward, or MPLS decapsulation if this is the last hop router for the path
         print('%s: processing MPLS frame "%s"' % (self, m_fr))
-        ## From the label received, we determine where it's going
-        tbl_D = self.frwd_tbl_D[m_fr.label]
-        m_fr.label = tbl_D["outLabel"]
-        outInterface = tbl_D["intf"]
-        ##see if we can decapsulate
+        table = self.frwd_tbl_D[m_fr.label]
+        m_fr.label = table["outLabel"]
+        outIntf = table["interface"]
+        #if the queue is not full, try to decapsulate
         try:
-            if m_fr.label == tbl_D['dest']:
+            #if the next hop is the destination then we can decapsulate the mpls frame
+            if m_fr.label == table['dest']:
                 fr = LinkFrame("Network", m_fr.frame)
             else:
                 fr = LinkFrame("MPLS", m_fr.to_byte_S())
-            # fr = LinkFrame('Network', m_fr.to_byte_S()) ##this is how it used to be set up. Always assume it was in there
-            self.intf_L[outInterface].put(fr.to_byte_S(), 'out', True)
-            print('%s: forwarding frame "%s" from interface %d to %d' % (self, fr, i, outInterface))
+            self.intf_L[outIntf].put(fr.to_byte_S(), 'out', True)
+            print('%s: forwarding frame "%s" from interface %d to %d' % (self, fr, i, outIntf))
         except queue.Full:
             print('%s: frame "%s" lost on interface %d' % (self, m_fr, i))
             pass
@@ -251,22 +241,21 @@ class MPLSlabel:
 
     labelLength = 5
 
-    ## initialize the frame and label
     def __init__(self, frame, label):
         self.frame = frame
         self.label = label
 
-    ## called when printing the object
-    def __str__(self):
-        return self.to_byte_S()
 
-    ## Sets the back of it with the label and fills the rest with zeros, then appends this to the packet
+    # Adds the label to the end of the byte_S, which is added to the end of the packet
     def to_byte_S(self):
         byte_S = str(self.label).zfill(self.labelLength)
         byte_S += str(self.frame)
         return byte_S
 
-    ##decode our label from byte_S
+    def __str__(self):
+        return self.to_byte_S()
+
+    #decodes the label using from_byte_S
     @classmethod
     def from_byte_S(self, byte_S):
         frame = byte_S[self.labelLength : ]
