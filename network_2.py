@@ -220,25 +220,24 @@ class Router:
 
 class MPLSlabel:
 
-    labelLength = 5
+    labelLen = 5
 
-    def __init__(self, frame, label):
+    def __init__(self, frame, label):#initialize MPLSlabel with fame and label
         self.frame = frame
         self.label = label
 
-
     # Adds the label to the end of the byte_S, which is added to the end of the packet
     def to_byte_S(self):
-        byte_S = str(self.label).zfill(self.labelLength)
+        byte_S = str(self.label).zfill(self.labelLen)
         byte_S += str(self.frame)
         return byte_S
 
     def __str__(self):
         return self.to_byte_S()
 
-    #decodes the label using from_byte_S
+    #gets the label using from the byte_S
     @classmethod
     def from_byte_S(self, byte_S):
-        frame = byte_S[self.labelLength : ]
-        label = byte_S[ : self.labelLength].strip('0')
+        frame = byte_S[self.labelLen : ]
+        label = byte_S[ : self.labelLen].strip('0')
         return self(frame, label)
