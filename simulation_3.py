@@ -1,5 +1,5 @@
-from network_2 import Router, Host
-from link_2 import Link, LinkLayer
+from network_3 import Router, Host
+from link_3 import Link, LinkLayer
 import threading
 from time import sleep
 import sys
@@ -7,7 +7,9 @@ from copy import deepcopy
 
 ##configuration parameters
 router_queue_size = 0 #0 means unlimited
-simulation_time = 20 #give the network sufficient time to execute transfers
+simulation_time = 22 #give the network sufficient time to execute transfers
+
+
 
 if __name__ == '__main__':
     object_L = [] #keeps track of objects, so we can kill their threads at the end
@@ -22,10 +24,10 @@ if __name__ == '__main__':
 
     #create routers and routing tables for connected clients (subnets)
     encap_tbl_D = {"H1": {"RA"}, "H2":{"RA"}}    # table used to encapsulate network packets into MPLS frames
-    frwd_tbl_D = {"H1": {"dest" : "H3", "interface" : 2, "outLabel":"1"}, "H2" : {"dest" : "H3", "outLabel": "2", "interface" : 3}}     # table used to forward MPLS frames
+    frwd_tbl_D = {"1": {"dest" : "H3", "interface" : 2, "outLabel":"1"}, "2" : {"dest" : "H3", "outLabel": "2", "interface" : 3}}     # table used to forward MPLS frames
     decap_tbl_D = {"RA":{"H1", "H2"}, "RD":{"H3"}}    # table used to decapsulate network packets from MPLS frames
     router_a = Router(name='RA',
-                              intf_capacity_L=[("H1",500),("H2",500),("RB",500),("RC",500)],
+                              intf_capacity_L=[("H1",500),("H2",500),("RB",100),("RC",500)],
                               encap_tbl_D = encap_tbl_D,
                               frwd_tbl_D = frwd_tbl_D,
                               decap_tbl_D = decap_tbl_D,
@@ -36,7 +38,7 @@ if __name__ == '__main__':
     frwd_tbl_D = { "1" : {"interface" : 1, "dest" : "H3", "outLabel":"1"} }
     decap_tbl_D = {"RA":{"H1", "H2"}, "RD":{"H3"}}
     router_b = Router(name='RB',
-                              intf_capacity_L=[("RA",500),("RD",100)],
+                              intf_capacity_L=[("RA",100),("RD",100)],
                               encap_tbl_D = encap_tbl_D,
                               frwd_tbl_D = frwd_tbl_D,
                               decap_tbl_D = decap_tbl_D,
@@ -47,7 +49,7 @@ if __name__ == '__main__':
     frwd_tbl_D = { "2" : {"interface" : 1, "dest" : "H3", "outLabel":"2"} }
     decap_tbl_D = {"RA":{"H1", "H2"}, "RD":{"H3"}}
     router_c = Router(name='RC',
-                              intf_capacity_L=[("RA",500),("RD",100)],
+                              intf_capacity_L=[("RA",500),("RD",500)],
                               encap_tbl_D = encap_tbl_D,
                               frwd_tbl_D = frwd_tbl_D,
                               decap_tbl_D = decap_tbl_D,
@@ -58,7 +60,7 @@ if __name__ == '__main__':
     frwd_tbl_D = { "1" : {"interface" : 2, "dest" : "H3", "outLabel":"H3"} , "2": {"dest" :"H3","outLabel" :"H3", "interface" : 2}}
     decap_tbl_D = {"RA":{"H1", "H2"}, "RD":{"H3"}}
     router_d = Router(name='RD',
-                              intf_capacity_L=[("RC",100),("RB",100),("H3",100)],
+                              intf_capacity_L=[("RC",500),("RB",100),("H3",500)],
                               encap_tbl_D = encap_tbl_D,
                               frwd_tbl_D = frwd_tbl_D,
                               decap_tbl_D = decap_tbl_D,

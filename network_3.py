@@ -1,6 +1,6 @@
 import queue
 import threading
-from link_2 import LinkFrame
+from link_3 import LinkFrame
 
 
 ## wrapper class for a queue of packets
@@ -13,6 +13,7 @@ class Interface:
         self.out_queue = queue.Queue(maxsize)
         self.capacity = capacity #serialization rate
         self.next_avail_time = 0 #the next time the interface can transmit a packet
+        self.queuesize = {}
 
     ##get packet from the queue interface
     # @param in_or_out - use 'in' or 'out' interface
@@ -20,9 +21,13 @@ class Interface:
         try:
             if in_or_out == 'in':
                 pkt_S = self.in_queue.get(False)
+                # if pkt_S is not None:
+                #     print('getting packet from the IN queue')
                 return pkt_S
             else:
                 pkt_S = self.out_queue.get(False)
+                # if pkt_S is not None:
+                #     print('getting packet from the OUT queue')
                 return pkt_S
         except queue.Empty:
             return None
@@ -33,8 +38,24 @@ class Interface:
     # @param block - if True, block until room in queue, if False may throw queue.Full exception
     def put(self, pkt, in_or_out, block=False):
         if in_or_out == 'out':
+            # print('putting packet in the OUT queue')
+            fr = LinkFrame.from_byte_S(pkt)
+            if fr.type_S == "Network":
+                p = NetworkPacket.from_byte_S(fr.data_S) #parse a packet out
+                if p.priority in self.queuesize:
+                    self.queuesize[p.priority] += 1
+                else:
+                    self.queuesize[p.priority] = 1
+            elif fr.type_S == "MPLS":
+                m_fr = MPLSlabel.from_byte_S(fr.data_S)
+                p = NetworkPacket.from_byte_S(m_fr.frame)
+                if p.priority in self.queuesize:
+                    self.queuesize[p.priority] += 1
+                else:
+                    self.queuesize[p.priority] = 1
             self.out_queue.put(pkt, block)
         else:
+            # print('putting packet in the IN queue')
             self.in_queue.put(pkt, block)
 
 
@@ -44,6 +65,7 @@ class Interface:
 class NetworkPacket:
     ## packet encoding lengths
     dst_S_length = 5
+    priority_S_length = 1
 
     ##@param dst: address of the destination host
     # @param data_S: packet payload
@@ -51,6 +73,7 @@ class NetworkPacket:
     def __init__(self, dst, data_S, priority=0):
         self.dst = dst
         self.data_S = data_S
+        self.priority = priority
         #TODO: add priority to the packet class
 
     ## called when printing the object
@@ -60,6 +83,7 @@ class NetworkPacket:
     ## convert packet to a byte string for transmission over links
     def to_byte_S(self):
         byte_S = str(self.dst).zfill(self.dst_S_length)
+        byte_S += str(self.priority).zfill(self.priority_S_length)
         byte_S += self.data_S
         return byte_S
 
@@ -68,8 +92,9 @@ class NetworkPacket:
     @classmethod
     def from_byte_S(self, byte_S):
         dst = byte_S[0 : NetworkPacket.dst_S_length].strip('0')
-        data_S = byte_S[NetworkPacket.dst_S_length : ]
-        return self(dst, data_S)
+        priority = byte_S[NetworkPacket.dst_S_length : NetworkPacket.dst_S_length + NetworkPacket.priority_S_length]
+        data_S = byte_S[NetworkPacket.dst_S_length + NetworkPacket.priority_S_length: ]
+        return self(dst, data_S, priority)
 
 
 ## Implements a network host for receiving and transmitting data
@@ -90,7 +115,7 @@ class Host:
     # @param data_S: data being transmitted to the network layer
     # @param priority: packet priority
     def udt_send(self, dst, data_S, priority=0):
-        pkt = NetworkPacket(dst, data_S)
+        pkt = NetworkPacket(dst, data_S, priority)
         print('%s: sending packet "%s" with priority %d' % (self, pkt, priority))
         #encapsulate network packet in a link frame (usually would be done by the OS)
         fr = LinkFrame('Network', pkt.to_byte_S())
@@ -178,7 +203,11 @@ class Router:
         intfName = self.intf_L[i].name
         ## do we need to encapsulate?
         if self.name in self.encap_tbl_D[intfName]: ## if from host, encapsulate
-            m_fr = MPLSlabel(pkt, intfName)
+            if int(pkt.priority) > 0:
+                label = '2'
+            else:
+                label = '1'
+            m_fr = MPLSlabel(pkt, label)
 
         print('%s: encapsulated packet "%s" as MPLS frame "%s"' % (self, pkt, m_fr))
         #send the encapsulated packet for processing as MPLS frame
@@ -192,19 +221,18 @@ class Router:
         #TODO: implement MPLS forward, or MPLS decapsulation if this is the last hop router for the path
         print('%s: processing MPLS frame "%s"' % (self, m_fr))
         ## From the label received, we determine where it's going
-        table = self.frwd_tbl_D[m_fr.label]
-        m_fr.label = table["outLabel"]
-        outIntf = table["interface"]
-        #if the queue is not full, try to decapsulate
+        tbl_D = self.frwd_tbl_D[m_fr.label]
+        m_fr.label = tbl_D["outLabel"]
+        outInterface = tbl_D["intf"]
+        ##see if we can decapsulate
         try:
-            #if the next hop is the destination then we can decapsulate the mpls frame
-            if m_fr.label == table['dest']:
-                print('%s: decapsulating MPLS frame "%s"' % (self, m_fr))
+            if m_fr.label == tbl_D['dest']:
                 fr = LinkFrame("Network", m_fr.frame)
             else:
                 fr = LinkFrame("MPLS", m_fr.to_byte_S())
-            self.intf_L[outIntf].put(fr.to_byte_S(), 'out', True)
-            print('%s: forwarding frame "%s" from interface %d to %d' % (self, fr, i, outIntf))
+            # fr = LinkFrame('Network', m_fr.to_byte_S()) ##this is how it used to be set up. Always assume it was in there
+            self.intf_L[outInterface].put(fr.to_byte_S(), 'out', True)
+            print('%s: forwarding frame "%s" from interface %d to %d' % (self, fr, i, outInterface))
         except queue.Full:
             print('%s: frame "%s" lost on interface %d' % (self, m_fr, i))
             pass
