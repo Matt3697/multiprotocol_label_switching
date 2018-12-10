@@ -7,7 +7,7 @@ from link_2 import LinkFrame
 class Interface:
     ## @param maxsize - the maximum size of the queue storing packets
     #  @param capacity - the capacity of the link in bps
-    def __init__(self, name = "defaultName", maxsize=0, capacity=500):
+    def __init__(self, name = "default", maxsize=0, capacity=500):
         self.name = name
         self.in_queue = queue.Queue(maxsize)
         self.out_queue = queue.Queue(maxsize)
