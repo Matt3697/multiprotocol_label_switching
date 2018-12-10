@@ -60,7 +60,7 @@ if __name__ == '__main__':
     frwd_tbl_D = { "1" : {"interface" : 2, "dest" : "H3", "outLabel":"H3"} , "2": {"dest" :"H3","outLabel" :"H3", "interface" : 2}}
     decap_tbl_D = {"RA":{"H1", "H2"}, "RD":{"H3"}}
     router_d = Router(name='RD',
-                              intf_capacity_L=[("RC",500),("RB",100),("H3",500)],
+                              intf_capacity_L=[("RC",100),("RB",100),("H3",100)],
                               encap_tbl_D = encap_tbl_D,
                               frwd_tbl_D = frwd_tbl_D,
                               decap_tbl_D = decap_tbl_D,
